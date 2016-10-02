@@ -25,6 +25,13 @@ class MPDReconnectable(mpd.MPDClient):
         self.port = port
         return super(MPDReconnectable, self).connect(uri, port)
 
+    def searchadd(self, *args):
+        try:
+            return super(MPDReconnectable, self).searchadd(*args)
+        except:
+            super(MPDReconnectable, self).connect(self.uri, self.port)
+            return super(MPDReconnectable, self).searchadd(*args)
+
     def list(self, *args):
         try:
             return super(MPDReconnectable, self).list(*args)
