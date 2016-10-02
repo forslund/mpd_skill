@@ -81,6 +81,13 @@ class MPDReconnectable(mpd.MPDClient):
             super(MPDReconnectable, self).connect(self.uri, self.port)
             return super(MPDReconnectable, self).previous()
 
+    def clear(self):
+        try:
+            return super(MPDReconnectable, self).clear()
+        except:
+            super(MPDReconnectable, self).connect(self.uri, self.port)
+            return super(MPDReconnectable, self).clear()
+
 class MPDSkill(MediaSkill):
     def __init__(self):
         super(MPDSkill, self).__init__('MPDSkill')
