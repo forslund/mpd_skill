@@ -125,7 +125,7 @@ class MPDSkill(MediaSkill):
         self.register_intent(intent, self.handle_play_playlist)
 
     def initialize(self):
-        logger.info('initializing Local Music skill')
+        logger.info('initializing MPD skill')
         super(MPDSkill, self).initialize()
         self.load_data_files(dirname(__file__))
 
@@ -143,6 +143,7 @@ class MPDSkill(MediaSkill):
         self.server.play()
 
     def handle_play_playlist(self, message):
+        logger.info('Handling play request')
         p = message.metadata.get('PlaylistKeyword' + self.name)
         self.before_play()
         self.speak("Playing " + str(p))
