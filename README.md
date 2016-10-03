@@ -1,6 +1,6 @@
 # MPD skill
 
-This is a simple skill for connecting and controlling media players via the MPD protocol.
+This is a simple [Mycroft](https://mycroft.ai) skill for connecting to and controlling media players via the MPD protocol.
 
 ## Installation
 
@@ -35,11 +35,15 @@ By default the mpd skill tries to connect to localhost on port 6600 if this is n
 
 The skill retrievs all listable albums, artists and genres and can play each of these.
 
-"Hey Mycroft, play Beastie Boys" will queue up all tracks by Beastie Boys and play them.
+"Hey Mycroft, play Beastie Boys" will queue up all tracks by *Beastie Boys* and play them.
 
-"Hey Mycroft, play Hello Nasty" will only queue up the album Hello Nasty"
+"Hey Mycroft, play Hello Nasty" will only queue up the album *Hello Nasty*
 
-"Hey Mycroft, play some Rock music" will queue up all songs tagged as Rock.
+"Hey Mycroft, play some Rock music" will queue up all songs tagged as *Rock*.
 
 
-Also pausing and resuming is possible along with stop and skipping tracks.
+Also pausing and resuming is possible along with stop and skipping tracks with commands like 
+
+- next track
+- pause
+- stop
