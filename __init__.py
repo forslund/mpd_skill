@@ -1,20 +1,10 @@
-import sys
-from os.path import dirname, abspath
-sys.path.append(abspath(dirname(__file__)))
-
-from mycroft.skills.media import MediaSkill
 from adapt.intent import IntentBuilder
 from mycroft.messagebus.message import Message
-
+from mycroft import MycroftSkill
 import mpd
-
 import time
-from os.path import dirname
 
-from mycroft.util.log import getLogger
-logger = getLogger(__name__)
-
-__author__ = 'forslund'
+from mycroft.util.log import LOG
 
 class MPDReconnectable(mpd.MPDClient):
     def __init__(self):
@@ -88,7 +78,8 @@ class MPDReconnectable(mpd.MPDClient):
             super(MPDReconnectable, self).connect(self.uri, self.port)
             return super(MPDReconnectable, self).clear()
 
-class MPDSkill(MediaSkill):
+
+class MPDSkill(MycroftSkill):
     def __init__(self):
         super(MPDSkill, self).__init__('MPDSkill')
         self.volume_is_low = False
@@ -104,7 +95,7 @@ class MPDSkill(MediaSkill):
             self.server = MPDReconnectable()
             self.server.connect(url, port)
         except:
-            logger.info('Could not connect to server, retrying in 10 sec')
+            LOG.info('Could not connect to server, retrying in 10 sec')
             time.sleep(10)
             self.emitter.emit(Message(self.name + '.connect'))
             return
@@ -117,27 +108,23 @@ class MPDSkill(MediaSkill):
 
         self.register_vocabulary(self.name, 'NameKeyword')
         for p in self.playlist:
-            logger.debug("Playlist: " + p)
+            LOG.debug("Playlist: " + p)
             self.register_vocabulary(p, 'PlaylistKeyword' + self.name)
         intent = IntentBuilder('PlayPlaylistIntent' + self.name)\
-            .require('PlayKeyword')\
+            .require('Play')\
             .require('PlaylistKeyword' + self.name)\
-            .build()
-        self.register_intent(intent, self.handle_play_playlist)
-        intent = IntentBuilder('PlayFromIntent' + self.name)\
-            .require('PlayKeyword')\
-            .require('PlaylistKeyword')\
-            .require('NameKeyword')\
             .build()
         self.register_intent(intent, self.handle_play_playlist)
 
     def initialize(self):
-        logger.info('initializing MPD skill')
-        super(MPDSkill, self).initialize()
-        self.load_data_files(dirname(__file__))
+        LOG.info('initializing MPD skill')
 
         self.emitter.on(self.name + '.connect', self._connect)
         self.emitter.emit(Message(self.name + '.connect'))
+        self.add_event('mycroft.audio.service.next', self.handle_next)
+        self.add_event('mycroft.audio.service.prev', self.handle_prev)
+        self.add_event('mycroft.audio.service.pause', self.handle_pause)
+        self.add_event('mycroft.audio.service.resume', self.handle_play)
 
     def play(self, tracks):
         self.server.clear()
@@ -150,15 +137,16 @@ class MPDSkill(MediaSkill):
         self.server.play()
 
     def handle_play_playlist(self, message):
-        logger.info('Handling play request')
-        p = message.metadata.get('PlaylistKeyword' + self.name)
-        self.before_play()
+        LOG.info('Handling play request')
+        p = message.data.get('PlaylistKeyword' + self.name)
+        self.server.clear()
+        self.server.stop()
         self.speak("Playing " + str(p))
         time.sleep(3)
         self.play(p)
 
     def stop(self, message=None):
-        logger.info('Handling stop request')
+        LOG.info('Handling stop request')
         self.server.clear()
         self.server.stop()
 
@@ -176,22 +164,22 @@ class MPDSkill(MediaSkill):
         self.server.pause(0)
 
     def lower_volume(self, message):
-        logger.info('lowering volume')
-        #self.mopidy.lower_volume()
+        LOG.info('lowering volume')
+        self.server.setvol(10)
         self.volume_is_low = True
 
     def restore_volume(self, message):
-        logger.info('maybe restoring volume')
+        LOG.info('maybe restoring volume')
         self.volume_is_low = False
         time.sleep(2)
         if not self.volume_is_low:
-            logger.info('restoring volume')
-            #self.mopidy.restore_volume()
+            LOG.info('restoring volume')
+            self.server.setvol(100)
 
     def handle_currently_playing(self, message):
         current_track = self.server.currentsong()
         if current_track is not None:
-            #self.mopidy.lower_volume()
+            self.server.setvol(10)
             time.sleep(1)
             if 'album' in current_track:
                 data = {'current_track': current_track['title'],
