@@ -1,1 +1,2 @@
-python-mpd2=0.5.5
+python-mpd2==0.5.5
+fuzzywuzzy==0.15.0

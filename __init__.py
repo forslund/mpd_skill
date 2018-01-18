@@ -1,10 +1,11 @@
 from adapt.intent import IntentBuilder
 from mycroft.messagebus.message import Message
-from mycroft import MycroftSkill
+from mycroft import MycroftSkill, intent_file_handler
+from mycroft.util.log import LOG
+
 import mpd
 import time
-
-from mycroft.util.log import LOG
+from fuzzywuzzy.process import extractOne
 
 class MPDReconnectable(mpd.MPDClient):
     def __init__(self):
@@ -83,6 +84,7 @@ class MPDSkill(MycroftSkill):
     def __init__(self):
         super(MPDSkill, self).__init__('MPDSkill')
         self.volume_is_low = False
+        self.playlist = []
 
     def _connect(self, message):
         if self.config:
@@ -107,14 +109,6 @@ class MPDSkill(MycroftSkill):
         self.playlist = self.albums + self.artists + self.genres
 
         self.register_vocabulary(self.name, 'NameKeyword')
-        for p in self.playlist:
-            LOG.debug("Playlist: " + p)
-            self.register_vocabulary(p, 'PlaylistKeyword' + self.name)
-        intent = IntentBuilder('PlayPlaylistIntent' + self.name)\
-            .require('Play')\
-            .require('PlaylistKeyword' + self.name)\
-            .build()
-        self.register_intent(intent, self.handle_play_playlist)
 
     def initialize(self):
         LOG.info('initializing MPD skill')
@@ -126,24 +120,31 @@ class MPDSkill(MycroftSkill):
         self.add_event('mycroft.audio.service.pause', self.handle_pause)
         self.add_event('mycroft.audio.service.resume', self.handle_play)
 
-    def play(self, tracks):
-        self.server.clear()
-        if tracks in self.genres:
-            self.server.searchadd('genre', tracks)
-        elif tracks in self.artists:
-            self.server.searchadd('artist', tracks)
-        else:
-            self.server.searchadd('album', tracks)
-        self.server.play()
-
+    @intent_file_handler('Play.intent')
     def handle_play_playlist(self, message):
         LOG.info('Handling play request')
-        p = message.data.get('PlaylistKeyword' + self.name)
+        key, confidence = extractOne(message.data.get('music'),
+                                     self.playlist)
+        if confidence > 50:
+            p = key
+        else:
+            LOG.info('couldn\'t find playlist')
+            return
         self.server.clear()
         self.server.stop()
         self.speak("Playing " + str(p))
         time.sleep(3)
-        self.play(p)
+
+        self.server.clear()
+
+        if p in self.genres:
+            self.server.searchadd('genre', p)
+        elif p in self.artists:
+            self.server.searchadd('artist', p)
+        else:
+            self.server.searchadd('album', p)
+
+        self.server.play()
 
     def stop(self, message=None):
         LOG.info('Handling stop request')
