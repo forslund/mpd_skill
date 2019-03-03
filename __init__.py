@@ -99,7 +99,8 @@ class MPDSkill(MycroftSkill):
         except:
             LOG.info('Could not connect to server, retrying in 10 sec')
             time.sleep(10)
-            self.emitter.emit(Message(self.name + '.connect'))
+            self.bus.emit(Message(self.name + '.connect'))
+
             return
 
         self.albums = self.server.list('album')
@@ -113,8 +114,8 @@ class MPDSkill(MycroftSkill):
     def initialize(self):
         LOG.info('initializing MPD skill')
 
-        self.emitter.on(self.name + '.connect', self._connect)
-        self.emitter.emit(Message(self.name + '.connect'))
+        self.bus.on(self.name + '.connect', self._connect)
+        self.bus.emit(Message(self.name + '.connect'))
         self.add_event('mycroft.audio.service.next', self.handle_next)
         self.add_event('mycroft.audio.service.prev', self.handle_prev)
         self.add_event('mycroft.audio.service.pause', self.handle_pause)
