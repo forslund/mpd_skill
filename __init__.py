@@ -1,6 +1,6 @@
 from adapt.intent import IntentBuilder
 from mycroft.messagebus.message import Message
-from mycroft import MycroftSkill, intent_file_handler
+from mycroft.skills.common_play_skill import CommonPlaySkill, CPSMatchLevel
 from mycroft.util.log import LOG
 
 import mpd
@@ -80,29 +80,28 @@ class MPDReconnectable(mpd.MPDClient):
             return super(MPDReconnectable, self).clear()
 
 
-class MPDSkill(MycroftSkill):
+class MPDSkill(CommonPlaySkill):
     def __init__(self):
         super(MPDSkill, self).__init__('MPDSkill')
+        self.server = None
         self.volume_is_low = False
         self.playlist = []
+        self.albums = []
+        self.artists = []
+        self.genres = []
 
-    def _connect(self, message):
-        if self.config:
-            url = self.config.get('mpd_url', 'localhost')
-            port = self.config.get('mpd_port', 6600)
-        else:
-            url = 'localhost'
-            port = 6600
+    def _connect(self):
+        self.log.info("TRYING TO CONNECT")
+        url = self.settings.get('mpd_url', 'localhost')
+        port = self.settings.get('mpd_port', 6600)
+
         try:
             self.server = MPDReconnectable()
             self.server.connect(url, port)
         except:
-            LOG.info('Could not connect to server, retrying in 10 sec')
-            time.sleep(10)
-            self.bus.emit(Message(self.name + '.connect'))
-
-            return
-
+            LOG.debug('Could not connect to server, retrying in 10 sec')
+            return False
+        self.log.info("CONNECTED!")
         self.albums = self.server.list('album')
         self.artists = self.server.list('artist')
         self.genres = self.server.list('genre')
@@ -110,33 +109,46 @@ class MPDSkill(MycroftSkill):
         self.playlist = self.albums + self.artists + self.genres
 
         self.register_vocabulary(self.name, 'NameKeyword')
+        return True
+
+    def repeating_check(self, message):
+        if not self.server:
+            self._connect()
 
     def initialize(self):
         LOG.info('initializing MPD skill')
 
-        self.bus.on(self.name + '.connect', self._connect)
-        self.bus.emit(Message(self.name + '.connect'))
         self.add_event('mycroft.audio.service.next', self.handle_next)
         self.add_event('mycroft.audio.service.prev', self.handle_prev)
         self.add_event('mycroft.audio.service.pause', self.handle_pause)
         self.add_event('mycroft.audio.service.resume', self.handle_play)
 
-    @intent_file_handler('Play.intent')
-    def handle_play_playlist(self, message):
+        self.schedule_repeating_event(self.repeating_check, None, 30,
+                                      name='mpd_check')
+
+    def CPS_match_query_phrase(self, phrase):
+        if self.playlist:
+            key, confidence = extractOne(phrase, self.playlist)
+            if confidence < 50:
+                LOG.info('couldn\'t find playlist')
+                return None
+            elif confidence > 90:
+                confidence = CPSMatchLevel.EXACT
+            elif confidence > 70:
+                confidence = CPSMatchLevel.MULTI_KEY
+            elif confidence > 60:
+                confidence = CPSMatchLevel.TITLE
+            else:
+                confidence = CPSMatchLevel.CATEGORY
+            return phrase, confidence, {'playlist': key}
+
+    def CPS_start(self, phrase, data):
         LOG.info('Handling play request')
-        key, confidence = extractOne(message.data.get('music'),
-                                     self.playlist)
-        if confidence > 50:
-            p = key
-        else:
-            LOG.info('couldn\'t find playlist')
-            return
+        p = data['playlist']
         self.server.clear()
         self.server.stop()
         self.speak("Playing " + str(p))
         time.sleep(3)
-
-        self.server.clear()
 
         if p in self.genres:
             self.server.searchadd('genre', p)
@@ -149,8 +161,9 @@ class MPDSkill(MycroftSkill):
 
     def stop(self, message=None):
         LOG.info('Handling stop request')
-        self.server.clear()
-        self.server.stop()
+        if self.server:
+            self.server.clear()
+            self.server.stop()
 
     def handle_next(self, message):
         self.server.next()
@@ -187,6 +200,9 @@ class MPDSkill(MycroftSkill):
                 data = {'current_track': current_track['title'],
                         'artist': current_track['artist']}
                 self.speak_dialog('currently_playing', data)
+
+    def shutdown(self):
+        self.cancel_scheduled_event('mpd_check')
 
 
 def create_skill():
