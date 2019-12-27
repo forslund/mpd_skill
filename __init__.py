@@ -27,56 +27,56 @@ class MPDReconnectable(mpd.MPDClient):
         try:
             return super().list(*args)
         except:
-            super().connect(self.uri, self.port)
+            super().connect(self.__uri, self.__port)
             return super().list(*args)
 
     def pause(self, PAUSE):
         try:
             return super().pause(PAUSE)
         except:
-            super().connect(self.uri, self.port)
+            super().connect(self.__uri, self.__port)
             return super().pause(PAUSE)
 
     def stop(self):
         try:
             return super().stop()
         except:
-            super().connect(self.uri, self.port)
+            super().connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).stop()
 
     def play(self):
         try:
             return super().play()
         except:
-            super().connect(self.uri, self.port)
+            super().connect(self.__uri, self.__port)
             return super().play()
 
     def currentsong(self):
         try:
             return super(MPDReconnectable, self).currentsong()
         except:
-            super().connect(self.uri, self.port)
+            super().connect(self.__uri, self.__port)
             return super().currentsong()
 
     def next(self):
         try:
             return super(MPDReconnectable, self).next()
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
+            super(MPDReconnectable, self).connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).next()
 
     def previous(self):
         try:
             return super(MPDReconnectable, self).previous()
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
+            super(MPDReconnectable, self).connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).previous()
 
     def clear(self):
         try:
             return super(MPDReconnectable, self).clear()
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
+            super(MPDReconnectable, self).connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).clear()
 
 
@@ -101,7 +101,8 @@ class MPDSkill(CommonPlaySkill):
         except:
             LOG.debug('Could not connect to server, retrying in 10 sec')
             return False
-        self.log.info("CONNECTED!")
+
+        self.log.info('Fetching albums and stuff!!!')
         self.albums = self.server.list('album')
         self.artists = self.server.list('artist')
         self.genres = self.server.list('genre')
