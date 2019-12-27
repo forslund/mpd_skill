@@ -9,54 +9,54 @@ from fuzzywuzzy.process import extractOne
 
 class MPDReconnectable(mpd.MPDClient):
     def __init__(self):
-        super(MPDReconnectable, self).__init__()
+        super().__init__()
 
     def connect(self, uri, port=6600):
-        self.uri = uri
-        self.port = port
-        return super(MPDReconnectable, self).connect(uri, port)
+        self.__uri = uri
+        self.__port = port
+        return super().connect(uri, port)
 
     def searchadd(self, *args):
         try:
-            return super(MPDReconnectable, self).searchadd(*args)
+            return super().searchadd(*args)
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
-            return super(MPDReconnectable, self).searchadd(*args)
+            super().connect(self.__uri, self.__port)
+            return super().searchadd(*args)
 
     def list(self, *args):
         try:
-            return super(MPDReconnectable, self).list(*args)
+            return super().list(*args)
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
-            return super(MPDReconnectable, self).list(*args)
+            super().connect(self.uri, self.port)
+            return super().list(*args)
 
     def pause(self, PAUSE):
         try:
-            return super(MPDReconnectable, self).pause(PAUSE)
+            return super().pause(PAUSE)
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
-            return super(MPDReconnectable, self).pause(PAUSE)
+            super().connect(self.uri, self.port)
+            return super().pause(PAUSE)
 
     def stop(self):
         try:
-            return super(MPDReconnectable, self).stop()
+            return super().stop()
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
+            super().connect(self.uri, self.port)
             return super(MPDReconnectable, self).stop()
 
     def play(self):
         try:
-            return super(MPDReconnectable, self).play()
+            return super().play()
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
-            return super(MPDReconnectable, self).play()
+            super().connect(self.uri, self.port)
+            return super().play()
 
     def currentsong(self):
         try:
             return super(MPDReconnectable, self).currentsong()
         except:
-            super(MPDReconnectable, self).connect(self.uri, self.port)
-            return super(MPDReconnectable, self).currentsong()
+            super().connect(self.uri, self.port)
+            return super().currentsong()
 
     def next(self):
         try:
