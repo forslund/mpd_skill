@@ -1,0 +1,27 @@
+{
+    "skillMetadata": {
+        "sections": [
+            {
+                "name": "Options",
+                "fields": [
+                    {
+                        "type": "label",
+                        "label": "Specify MPD server." 
+                    },
+                    {
+                        "name": "mpd_url",
+                        "type": "text",
+                        "label": "MPD server address",
+                        "value": "localhost"
+                    },
+                    {
+                        "name": "mpd_port",
+                        "type": "text",
+                        "label": "MPD server port",
+                        "value": "6600"
+                    }
+                ]
+            }
+        ]
+    }
+}
