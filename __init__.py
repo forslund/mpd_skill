@@ -1,11 +1,10 @@
-from adapt.intent import IntentBuilder
-from mycroft.messagebus.message import Message
 from mycroft.skills.common_play_skill import CommonPlaySkill, CPSMatchLevel
 from mycroft.util.log import LOG
 
 import mpd
 import time
 from fuzzywuzzy.process import extractOne
+
 
 class MPDReconnectable(mpd.MPDClient):
     def __init__(self):
@@ -19,63 +18,63 @@ class MPDReconnectable(mpd.MPDClient):
     def searchadd(self, *args):
         try:
             return super().searchadd(*args)
-        except:
+        except Exception:
             super().connect(self.__uri, self.__port)
             return super().searchadd(*args)
 
     def list(self, *args):
         try:
             return super().list(*args)
-        except:
+        except Exception:
             super().connect(self.__uri, self.__port)
             return super().list(*args)
 
     def pause(self, PAUSE):
         try:
             return super().pause(PAUSE)
-        except:
+        except Exception:
             super().connect(self.__uri, self.__port)
             return super().pause(PAUSE)
 
     def stop(self):
         try:
             return super().stop()
-        except:
+        except Exception:
             super().connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).stop()
 
     def play(self):
         try:
             return super().play()
-        except:
+        except Exception:
             super().connect(self.__uri, self.__port)
             return super().play()
 
     def currentsong(self):
         try:
             return super(MPDReconnectable, self).currentsong()
-        except:
+        except Exception:
             super().connect(self.__uri, self.__port)
             return super().currentsong()
 
     def next(self):
         try:
             return super(MPDReconnectable, self).next()
-        except:
+        except Exception:
             super(MPDReconnectable, self).connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).next()
 
     def previous(self):
         try:
             return super(MPDReconnectable, self).previous()
-        except:
+        except Exception:
             super(MPDReconnectable, self).connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).previous()
 
     def clear(self):
         try:
             return super(MPDReconnectable, self).clear()
-        except:
+        except Exception:
             super(MPDReconnectable, self).connect(self.__uri, self.__port)
             return super(MPDReconnectable, self).clear()
 
@@ -98,7 +97,7 @@ class MPDSkill(CommonPlaySkill):
         try:
             self.server = MPDReconnectable()
             self.server.connect(url, port)
-        except:
+        except Exception:
             LOG.debug('Could not connect to server, retrying in 10 sec')
             return False
 
