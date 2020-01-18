@@ -1,5 +1,4 @@
 from mycroft.skills.common_play_skill import CommonPlaySkill, CPSMatchLevel
-from mycroft.util.log import LOG
 
 import mpd
 import time
@@ -98,25 +97,31 @@ class MPDSkill(CommonPlaySkill):
             self.server = MPDReconnectable()
             self.server.connect(url, port)
         except Exception:
-            LOG.debug('Could not connect to server, retrying in 10 sec')
+            self.log.debug('Could not connect to server, retrying in 10 sec')
             return False
 
-        self.log.info('Fetching albums and stuff!!!')
-        self.albums = self.server.list('album')
-        self.artists = self.server.list('artist')
-        self.genres = self.server.list('genre')
+        self.log.info('Fetching stuff!!!')
+        try:
+            self.log.info('Albums...')
+            self.albums = self.server.list('album')
+            self.log.info('Artists...')
+            self.artists = self.server.list('artist')
+            self.log.info('Genres...')
+            self.genres = self.server.list('genre')
+            self.log.info('Done!')
 
-        self.playlist = self.albums + self.artists + self.genres
-
-        self.register_vocabulary(self.name, 'NameKeyword')
-        return True
+            self.playlist = self.albums + self.artists + self.genres
+            self.register_vocabulary(self.name, 'NameKeyword')
+            return True
+        except Exception:
+            self.log.exception('An error occured while collecting data')
 
     def repeating_check(self, message):
         if not self.server:
             self._connect()
 
     def initialize(self):
-        LOG.info('initializing MPD skill')
+        self.log.info('initializing MPD skill')
 
         self.add_event('mycroft.audio.service.next', self.handle_next)
         self.add_event('mycroft.audio.service.prev', self.handle_prev)
@@ -130,7 +135,7 @@ class MPDSkill(CommonPlaySkill):
         if self.playlist:
             key, confidence = extractOne(phrase, self.playlist)
             if confidence < 50:
-                LOG.info('couldn\'t find playlist')
+                self.log.info('couldn\'t find playlist')
                 return None
             elif confidence > 90:
                 confidence = CPSMatchLevel.EXACT
@@ -140,10 +145,13 @@ class MPDSkill(CommonPlaySkill):
                 confidence = CPSMatchLevel.TITLE
             else:
                 confidence = CPSMatchLevel.CATEGORY
+            self.log.info('MPD Found {}'.format(key))
             return phrase, confidence, {'playlist': key}
+        else:
+            self.log.info('Sorry MPD has no playlists...')
 
     def CPS_start(self, phrase, data):
-        LOG.info('Handling play request')
+        self.log.info('Starting playback for {}'.format(data))
         p = data['playlist']
         self.server.clear()
         self.server.stop()
@@ -160,7 +168,7 @@ class MPDSkill(CommonPlaySkill):
         self.server.play()
 
     def stop(self, message=None):
-        LOG.info('Handling stop request')
+        self.log.info('Handling stop request')
         if self.server:
             self.server.clear()
             self.server.stop()
@@ -179,16 +187,16 @@ class MPDSkill(CommonPlaySkill):
         self.server.pause(0)
 
     def lower_volume(self, message):
-        LOG.info('lowering volume')
+        self.log.info('lowering volume')
         self.server.setvol(10)
         self.volume_is_low = True
 
     def restore_volume(self, message):
-        LOG.info('maybe restoring volume')
+        self.log.info('maybe restoring volume')
         self.volume_is_low = False
         time.sleep(2)
         if not self.volume_is_low:
-            LOG.info('restoring volume')
+            self.log.info('restoring volume')
             self.server.setvol(100)
 
     def handle_currently_playing(self, message):
