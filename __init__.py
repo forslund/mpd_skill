@@ -94,12 +94,13 @@ class MPDSkill(CommonPlaySkill):
         port = self.settings.get('mpd_port', 6600)
 
         try:
-            self.server = MPDReconnectable()
-            self.server.connect(url, port)
+            server = MPDReconnectable()
+            server.connect(url, port)
         except Exception:
             self.log.debug('Could not connect to server, retrying in 10 sec')
             return False
-
+        finally:
+            self.server = server
         self.log.info('Fetching stuff!!!')
         try:
             self.log.info('Albums...')
