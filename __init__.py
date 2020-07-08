@@ -122,9 +122,12 @@ class MPDSkill(CommonPlaySkill):
             self.artists = self.server.list('artist')
             self.log.info('Genres...')
             self.genres = self.server.list('genre')
+            self.log.info('Titles...')
+            self.titles = self.server.list('title')
             self.log.info('Done!')
 
-            self.playlist = self.albums + self.artists + self.genres
+            self.playlist = (self.albums + self.artists +
+                             self.genres + self.titles)
             self.register_vocabulary(self.name, 'NameKeyword')
             return True
         except Exception:
