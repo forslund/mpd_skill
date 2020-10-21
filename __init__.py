@@ -16,7 +16,7 @@ from mycroft.skills.common_play_skill import CommonPlaySkill, CPSMatchLevel
 
 import mpd
 import time
-from fuzzywuzzy.process import extractOne
+from rapidfuzz import process
 
 
 class MPDReconnectable(mpd.MPDClient):
@@ -97,10 +97,10 @@ class MPDSkill(CommonPlaySkill):
         super(MPDSkill, self).__init__('MPDSkill')
         self.server = None
         self.volume_is_low = False
-        self.playlist = []
-        self.albums = []
-        self.artists = []
-        self.genres = []
+        self.playlist = {}
+        self.albums = {}
+        self.artists = {}
+        self.genres = {}
         self.regexes = {}
 
     def _connect(self):
@@ -119,15 +119,15 @@ class MPDSkill(CommonPlaySkill):
         self.log.info('Fetching stuff!!!')
         try:
             self.log.info('Albums...')
-            self.albums = self.server.list('album')
+            self.albums = {e['album']: e for e in self.server.list('album')}
             self.log.info('Artists...')
-            self.artists = self.server.list('artist')
+            self.artists = {e['artist']: e for e in self.server.list('artist')}
             self.log.info('Genres...')
-            self.genres = self.server.list('genre')
-            self.log.info(self.genres)
+            self.genres = {e['genre']: e for e in self.server.list('genre')}
             self.log.info('Done!')
-
-            self.playlist = self.albums + self.artists + self.genres
+            self.playlist.update(self.albums)
+            self.playlist.update(self.artists)
+            self.playlist.update(self.genres)
             self.register_vocabulary(self.name, 'NameKeyword')
             return True
         except Exception:
@@ -175,7 +175,10 @@ class MPDSkill(CommonPlaySkill):
             else:
                 source = self.playlist
 
-            key, confidence = extractOne(phrase, source)
+            best = process.extractOne(phrase, source.keys())
+            self.log.info(best)
+            key, confidence, _ = best if len(best) > 0 else ('', 0, 0)
+
             if confidence < 50:
                 self.log.info('couldn\'t find playlist')
                 return None
@@ -188,7 +191,7 @@ class MPDSkill(CommonPlaySkill):
             else:
                 confidence = CPSMatchLevel.CATEGORY
             self.log.info('MPD Found {}'.format(key))
-            return phrase, confidence, {'playlist': key}
+            return phrase, confidence, {'playlist': source[key]}
         else:
             self.log.info('Sorry MPD has no playlists...')
 
