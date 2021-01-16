@@ -15,7 +15,7 @@ from mycroft.skills.common_play_skill import CommonPlaySkill, CPSMatchLevel
 
 import mpd
 import time
-from fuzzywuzzy.process import extractOne
+from rapidfuzz import process
 
 
 class MPDReconnectable(mpd.MPDClient):
@@ -150,7 +150,8 @@ class MPDSkill(CommonPlaySkill):
 
     def CPS_match_query_phrase(self, phrase):
         if self.playlist:
-            key, confidence = extractOne(phrase, self.playlist)
+            best =  process.extract(phrase, self.playlist, limit=1)
+            key, confidence = best[0]
             if confidence < 50:
                 self.log.info('couldn\'t find playlist')
                 return None
