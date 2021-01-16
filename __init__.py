@@ -170,17 +170,13 @@ class MPDSkill(CommonPlaySkill):
     def CPS_start(self, phrase, data):
         self.log.info('Starting playback for {}'.format(data))
         p = data['playlist']
+        play_type, playlist = list(p.items())[0]
         self.server.clear()
         self.server.stop()
-        self.speak("Playing " + str(p))
+        self.speak("Playing " + playlist)
         time.sleep(3)
 
-        if p in self.genres:
-            self.server.searchadd('genre', p)
-        elif p in self.artists:
-            self.server.searchadd('artist', p)
-        else:
-            self.server.searchadd('album', p)
+        self.server.searchadd(play_type, playlist)
 
         self.server.play()
 
