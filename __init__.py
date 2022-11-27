@@ -143,6 +143,7 @@ class MPDSkill(CommonPlaySkill):
         self.add_event('mycroft.audio.service.pause', self.handle_pause)
         self.add_event('mycroft.audio.service.resume', self.handle_play)
 
+        self._connect()
         self.schedule_repeating_event(self.repeating_check, None, 30,
                                       name='mpd_check')
 
