@@ -1,0 +1,1 @@
+(the genre|in the style of) (?P<genre>.+)

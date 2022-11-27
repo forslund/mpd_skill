@@ -10,6 +10,7 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import re
 
 from mycroft.skills.common_play_skill import CommonPlaySkill, CPSMatchLevel
 
@@ -100,6 +101,7 @@ class MPDSkill(CommonPlaySkill):
         self.albums = []
         self.artists = []
         self.genres = []
+        self.regexes = {}
 
     def _connect(self):
         self.log.info("TRYING TO CONNECT")
@@ -135,6 +137,15 @@ class MPDSkill(CommonPlaySkill):
         if not self.server:
             self._connect()
 
+    def translate_match(self, regex):
+        if regex not in self.regexes:
+            path = self.find_resource(regex + '.regex')
+            if path:
+                with open(path) as f:
+                    string = f.read().strip()
+                self.regexes[regex] = re.compile(string)
+        return self.regexes[regex].match
+
     def initialize(self):
         self.log.info('initializing MPD skill')
 
@@ -149,7 +160,22 @@ class MPDSkill(CommonPlaySkill):
 
     def CPS_match_query_phrase(self, phrase):
         if self.playlist:
-            key, confidence = extractOne(phrase, self.playlist)
+            if self.translate_match('album')(phrase):
+                self.log.info("Matching against albums")
+                source = self.albums
+                phrase = self.translate_match('album')(phrase)['album']
+            elif self.translate_match('artist')(phrase):
+                self.log.info("Matching against artists")
+                source = self.artists
+                phrase = self.translate_match('artist')(phrase)['artist']
+            elif self.translate_match('genre')(phrase):
+                self.log.info("Matching against genres")
+                source = self.genres
+                phrase = self.translate_match('genre')(phrase)['genre']
+            else:
+                source = self.playlist
+
+            key, confidence = extractOne(phrase, source)
             if confidence < 50:
                 self.log.info('couldn\'t find playlist')
                 return None
